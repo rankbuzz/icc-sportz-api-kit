@@ -200,5 +200,108 @@ Example (probed): Pakistan vs Sri Lanka 2nd Test `274141` — Day 1 Lunch, `is_m
 | `/matches/{id}/...` | schedule + `/v1/game/*` + live JSON |
 | Fixtures widgets | `/v1/schedule` |
 | WTC standings / predictors | championship_standing + POST predictor |
+| `/news/{slug}` | **dapi** `/v2/content/en-GB/stories/{slug}` (not Sportz) |
 
 Widget bootstrap: `icc-init.js` → `clientConfig.json` + `init.js?v={siFileVersion}`.
+
+---
+
+## News / stories (Distribution API)
+
+**Not Sportz.** `/cricket/v1/news` and `/cricket/v1/stories` on Sportz → 404.
+
+Base:
+
+```
+https://dapi.icc-cricket.com/v2/content/en-GB
+```
+
+Locale path also works as `en-gb` (lowercase). No `client_id` required.
+
+### List news
+
+```
+GET /v2/content/en-GB/stories?$limit=16&tags.slug=news&$sort=contentDate&$skip=0
+```
+
+| Param | Notes |
+|-------|--------|
+| `$limit` / `$skip` | paging |
+| `$sort` | e.g. `contentDate` |
+| `tags.slug` | `news` for the news hub |
+
+Response: `items[]` with `slug`, `title` / `headline`, `contentDate`, `_entityId`, `thumbnail`, `tags`, `selfUrl`.
+
+### Single article — use **slug**
+
+```
+GET /v2/content/en-GB/stories/{slug}
+```
+
+Example slug: `england-batting-ace-makes-whopping-34-spot-rise-on-rankings`
+
+| Key | Works? |
+|-----|--------|
+| `.../stories/{slug}` | yes |
+| `.../stories/{_entityId}` UUID in path | **404** |
+| `.../stories?$filter=_entityId eq {uuid}` | yes |
+
+Site map: `https://www.icc-cricket.com/news/{slug}` → same slug.
+
+### Article body: `parts[]`
+
+Ordered blocks. Probed mix across ~30 news stories: mostly markdown + Instagram oembeds + ICC videos.
+
+| `type` | Discriminator | Payload |
+|--------|---------------|---------|
+| `markdown` | — | article text / HTML links |
+| `external` | `externalType=oembed` | Instagram / X / Spotify — `inputUrl` + `content.html` |
+| `external` | `externalType=story-part-quote` | quote + author |
+| `external` | `externalType=story-part-table` | table data |
+| `customentity` | `entityCode=video` | ICC video embed |
+
+Instagram / oembed example shape:
+
+```json
+{
+  "type": "external",
+  "externalType": "oembed",
+  "inputUrl": "https://www.instagram.com/icc/reel/....",
+  "content": {
+    "provider_name": "Instagram",
+    "html": "<blockquote>..."
+  }
+}
+```
+
+ICC video part:
+
+```json
+{
+  "type": "customentity",
+  "entityCode": "video",
+  "slug": "shubman-gill-s-breathtaking-six-...",
+  "fields": {
+    "videoId": "...",
+    "mezzanineUrl": "https://media.icc-cricket.com/video/....mp4",
+    "videoDuration": "PT4M59S"
+  }
+}
+```
+
+### Standalone video
+
+```
+GET /v2/content/en-GB/videos/{video-slug}
+```
+
+Same video object as embedded `customentity:video` (fields include `mezzanineUrl` on `media.icc-cricket.com`).
+
+### Related dapi content (also on site)
+
+Photos / sponsors appear under the same host, e.g.:
+
+```
+GET /v2/content/en-GB/photos/{slug}
+GET /v2/content/en-GB/sponsors/{slug}
+```

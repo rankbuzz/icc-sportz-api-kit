@@ -1,7 +1,7 @@
 {
   "name": "icc-sportz-api-kit",
   "version": "0.1.0",
-  "description": "ICC Sportz.io public JSON API kit: schedule, rankings, live scorecard, commentary",
+  "description": "ICC Sportz + Distribution API kit: schedule, rankings, live scorecard, commentary, news/stories",
   "type": "module",
   "main": "src/index.js",
   "bin": {
@@ -13,7 +13,10 @@
     "score": "node src/cli.js score",
     "comm": "node src/cli.js comm",
     "ranking": "node src/cli.js ranking",
-    "series": "node src/cli.js series"
+    "series": "node src/cli.js series",
+    "news": "node src/cli.js news",
+    "story": "node src/cli.js story",
+    "video": "node src/cli.js video"
   },
   "engines": {
     "node": ">=18"

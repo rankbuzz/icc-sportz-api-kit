@@ -1,19 +1,27 @@
 # ICC Sportz API Kit
 
-Reverse-engineered notes + small Node helper for the **official ICC Sportz Interactive JSON feeds** used by [icc-cricket.com](https://www.icc-cricket.com).
+Reverse-engineered notes + small Node helper for the **official ICC Sportz Interactive JSON feeds** and **ICC Distribution (news) API** used by [icc-cricket.com](https://www.icc-cricket.com).
 
 **Important:** Unofficial use of public widget endpoints. They can change without notice. Use responsibly.
 
 ## What this is
 
-ICC’s site loads cricket data from:
+ICC’s site loads cricket **match data** from Sportz:
 
 ```
 https://assets-icc.sportz.io/cricket/v1/...
 https://assets-icc.sportz.io/cricket/live/json/{match_file}.json
 ```
 
-Not HTML scraping — real JSON for schedule, rankings, scorecard, commentary, players, teams, standings.
+And **news / stories / videos** from the Distribution API (not Sportz):
+
+```
+https://dapi.icc-cricket.com/v2/content/en-GB/stories
+https://dapi.icc-cricket.com/v2/content/en-GB/stories/{slug}
+https://dapi.icc-cricket.com/v2/content/en-GB/videos/{slug}
+```
+
+Not HTML scraping — real JSON for schedule, rankings, scorecard, commentary, players, teams, standings, and news articles (with Instagram embeds + ICC video parts).
 
 ## Flow
 
@@ -22,6 +30,7 @@ Not HTML scraping — real JSON for schedule, rankings, scorecard, commentary, p
 2) /v1/game/scorecard    → full scorecard (or live/json/{match_file}.json)
 3) /v1/game/commentary   → ball-by-ball commentary
 4) /v1/ranking           → bat/bowl/allrounder/team × formats
+5) dapi .../stories      → news list + single article by slug
 ```
 
 ## Client ID
@@ -51,6 +60,8 @@ npm run score -- 274141
 npm run comm -- 274141 1
 npm run ranking -- bat test
 npm run series -- 2026
+npm run news -- 10
+npm run story -- england-batting-ace-makes-whopping-34-spot-rise-on-rankings
 ```
 
 ## Coverage (probed)
@@ -63,7 +74,14 @@ npm run series -- 2026
 | Commentary / OBO / batsman-split / H2H | yes |
 | Player / team / venue / series | yes |
 | Series & championship standings | yes (tournament / WTC ids) |
+| News / stories (dapi) | list + single by **slug**; embeds + videos in `parts[]` |
 | Predictors (WTC / ranking calculator) | POST + scenario body — optional |
+
+## News (quick)
+
+- Use **slug** for single article (`/stories/{slug}`). UUID in the path → 404.
+- Site URL `/news/{slug}` maps 1:1 to the API slug.
+- Article body is `parts[]`: `markdown`, Instagram/X/Spotify `oembed`, ICC `customentity:video` (`mezzanineUrl` on `media.icc-cricket.com`), quotes, tables.
 
 ## Docs
 

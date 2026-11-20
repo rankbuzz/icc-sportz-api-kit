@@ -5,6 +5,10 @@ export const BASE = "https://assets-icc.sportz.io";
 export const BASE_V1 = `${BASE}/cricket/v1`;
 export const LIVE_JSON = `${BASE}/cricket/live/json`;
 
+/** ICC Distribution API (news / stories / videos) — NOT Sportz. */
+export const DAPI_BASE = "https://dapi.icc-cricket.com";
+export const DAPI_CONTENT = `${DAPI_BASE}/v2/content/en-GB`;
+
 /** Ranking type × format matrix that returns 200. */
 export const RANK_TYPES = ["bat", "bowl", "allrounder", "team"];
 export const COMP_TYPES = ["test", "odi", "t20", "odiw", "t20w"];

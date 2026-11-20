@@ -1,4 +1,13 @@
-export { CLIENT_ID, BASE, BASE_V1, LIVE_JSON, RANK_TYPES, COMP_TYPES } from "./config.js";
+export {
+  CLIENT_ID,
+  BASE,
+  BASE_V1,
+  LIVE_JSON,
+  DAPI_BASE,
+  DAPI_CONTENT,
+  RANK_TYPES,
+  COMP_TYPES,
+} from "./config.js";
 export {
   getSchedule,
   getMatch,
@@ -14,5 +23,10 @@ export {
   listSeries,
   getSeriesStanding,
   getChampionshipStanding,
+  listNews,
+  getStory,
+  getStoryByEntityId,
+  getVideo,
+  summarizeStoryParts,
   summarizeMatch,
 } from "./client.js";

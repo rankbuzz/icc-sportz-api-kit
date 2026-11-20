@@ -6,8 +6,12 @@ import {
   getRanking,
   getSchedule,
   getScorecard,
+  getStory,
+  getVideo,
+  listNews,
   listSeries,
   summarizeMatch,
+  summarizeStoryParts,
 } from "./client.js";
 import { COMP_TYPES, RANK_TYPES } from "./config.js";
 
@@ -114,6 +118,41 @@ async function main() {
       });
       break;
     }
+    case "news": {
+      const limit = Number(args[0] || 10);
+      const data = await listNews({ limit });
+      const items = data?.items || data?.data || [];
+      out({
+        count: items.length,
+        stories: items.map((s) => ({
+          slug: s.slug,
+          title: s.title || s.headline,
+          date: s.contentDate,
+          entityId: s._entityId,
+        })),
+      });
+      break;
+    }
+    case "story": {
+      const slug = args[0];
+      if (!slug) throw new Error("usage: story <slug>");
+      const story = await getStory(slug);
+      out(summarizeStoryParts(story));
+      break;
+    }
+    case "video": {
+      const slug = args[0];
+      if (!slug) throw new Error("usage: video <video-slug>");
+      const video = await getVideo(slug);
+      out({
+        slug: video?.slug,
+        title: video?.title || video?.headline,
+        videoId: video?.fields?.videoId || video?.videoId,
+        mezzanineUrl: video?.fields?.mezzanineUrl,
+        duration: video?.fields?.videoDuration,
+      });
+      break;
+    }
     default:
       console.error(`Usage:
   npm run live
@@ -121,7 +160,10 @@ async function main() {
   npm run score -- <matchId>
   npm run comm -- <matchId> [inning]
   npm run ranking -- <bat|bowl|allrounder|team> <test|odi|t20|odiw|t20w>
-  npm run series -- [year]`);
+  npm run series -- [year]
+  npm run news -- [limit]
+  npm run story -- <slug>
+  npm run video -- <video-slug>`);
       process.exit(cmd ? 1 : 0);
   }
 }

@@ -1,4 +1,4 @@
-import { getLiveJson, getV1 } from "./http.js";
+import { getDapi, getLiveJson, getV1 } from "./http.js";
 
 /** Live + upcoming (+ optional recent) schedule strip / pages. */
 export async function getSchedule(opts = {}) {
@@ -158,6 +158,94 @@ export async function getChampionshipStanding(championshipId) {
     throw new Error(`championship standing failed: ${status} ${url}`);
   }
   return json;
+}
+
+// --- ICC Distribution API (news) — dapi.icc-cricket.com, not Sportz ---
+
+/** Latest news stories. Prefer slug for detail; UUID path 404s. */
+export async function listNews(opts = {}) {
+  const { limit = 16, skip = 0, tag = "news", sort = "contentDate" } = opts;
+  const { status, json, url } = await getDapi("/stories", {
+    $limit: String(limit),
+    $skip: String(skip),
+    $sort: sort,
+    "tags.slug": tag,
+  });
+  if (status !== 200) throw new Error(`news list failed: ${status} ${url}`);
+  return json;
+}
+
+/** Single story by slug (site URL /news/{slug}). */
+export async function getStory(slug) {
+  if (!slug) throw new Error("getStory requires slug");
+  const { status, json, url } = await getDapi(`/stories/${encodeURIComponent(slug)}`);
+  if (status !== 200) throw new Error(`story failed: ${status} ${url}`);
+  return json;
+}
+
+/** Lookup by UUID when you only have _entityId (path /stories/{uuid} → 404). */
+export async function getStoryByEntityId(entityId) {
+  if (!entityId) throw new Error("getStoryByEntityId requires entityId");
+  const { status, json, url } = await getDapi("/stories", {
+    $filter: `_entityId eq ${entityId}`,
+  });
+  if (status !== 200) throw new Error(`story by entityId failed: ${status} ${url}`);
+  return json;
+}
+
+/** Embedded / standalone ICC video by video slug. */
+export async function getVideo(slug) {
+  if (!slug) throw new Error("getVideo requires slug");
+  const { status, json, url } = await getDapi(`/videos/${encodeURIComponent(slug)}`);
+  if (status !== 200) throw new Error(`video failed: ${status} ${url}`);
+  return json;
+}
+
+/** Summarize story parts: markdown, Instagram/X oembeds, ICC videos, quotes, tables. */
+export function summarizeStoryParts(story) {
+  const parts = story?.parts || [];
+  const summary = {
+    slug: story?.slug,
+    title: story?.title || story?.headline,
+    contentDate: story?.contentDate,
+    entityId: story?._entityId,
+    partCounts: {},
+    embeds: [],
+    videos: [],
+    quotes: [],
+  };
+
+  for (const p of parts) {
+    const key =
+      p.type === "external"
+        ? `external:${p.externalType || "unknown"}`
+        : p.type === "customentity"
+          ? `customentity:${p.entityCode || "unknown"}`
+          : p.type || "unknown";
+    summary.partCounts[key] = (summary.partCounts[key] || 0) + 1;
+
+    if (p.type === "external" && p.externalType === "oembed") {
+      summary.embeds.push({
+        provider: p.content?.provider_name || null,
+        inputUrl: p.inputUrl || null,
+      });
+    }
+    if (p.type === "customentity" && p.entityCode === "video") {
+      summary.videos.push({
+        slug: p.slug,
+        videoId: p.fields?.videoId || null,
+        mezzanineUrl: p.fields?.mezzanineUrl || null,
+        duration: p.fields?.videoDuration || null,
+      });
+    }
+    if (p.type === "external" && p.externalType === "story-part-quote") {
+      summary.quotes.push({
+        text: p.content?.text || p.content?.quote || null,
+        author: p.content?.author || null,
+      });
+    }
+  }
+  return summary;
 }
 
 /** Compact summary from a schedule match object. */
